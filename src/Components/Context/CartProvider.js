@@ -9,8 +9,31 @@ const deafultCartState = {
 const cartReducer = (state, action) => {
   switch (action.type) {
     case "ADD":
-      console.log(action.payload);
-      const updatedItems = state.items.concat(action.payload);
+      // when we call the ADD reducer we pass an item into the function. The item contains id, name, price and amount values. First we are checking to see if the item id is already included in the items property contained in our state.
+      const existingCartItemIndex = state.items.findIndex(
+        (item) => item.id === action.payload.id
+      );
+
+      // next, if we the findIndex function above returns a value we declare a variable and set it = to the already existing item in the cart by accessing the index of the items array within our state. If existing cart item index isn't found the existing cart item cariable will be null.
+      const existingCartItem = state.items[existingCartItemIndex];
+
+      // now that we have confirmed and isolated the existing item we can update its properties to account for duplicates. In our if statement we are spreading the already existing properties into a new object and only updating the amount by adding the existing amount to the payload amount coming in from the cart.
+      // Then we are creating a new array in the updatedItems variable. In that array we are updating the existingItemIndex with the updated Item contianing the new amount figure.
+      // Now that we have an updated items array containing our updated item we can calculate the total amount based on the updated item data.
+      // In the else statement we are simply adding the item to the array because it was confirmed to not be present at time of function call.
+      // Lastly we return the items array with the value of updatedItems and the totalAmount as the newly calculated price.
+      let updatedItems;
+      if (existingCartItem) {
+        const updatedItem = {
+          ...existingCartItem,
+          amount: existingCartItem.amount + action.payload.amount,
+        };
+        updatedItems = [...state.items];
+        updatedItems[existingCartItemIndex] = updatedItem;
+      } else {
+        updatedItems = state.items.concat(action.payload);
+      }
+
       const updatedTotalAmount =
         state.totalAmount + action.payload.price * action.payload.amount;
       return {
@@ -18,7 +41,32 @@ const cartReducer = (state, action) => {
         totalAmount: updatedTotalAmount,
       };
     case "REMOVE":
-      break;
+      let indexOfItemToBeRemoved = state.items.findIndex(
+        (item) => item.id === action.payload
+      );
+      const itemToBeRemoved = state.items[indexOfItemToBeRemoved];
+      let newTotalAmount = state.totalAmount - itemToBeRemoved.price;
+      if (newTotalAmount < 0) {
+        newTotalAmount = 0;
+      }
+      let updatedItemList;
+      if (state.items[indexOfItemToBeRemoved].amount === 1) {
+        updatedItemList = state.items.filter(
+          (item) => item.id !== action.payload
+        );
+      } else if (state.items[indexOfItemToBeRemoved].amount > 1) {
+        let updatedItem = {
+          ...itemToBeRemoved,
+          amount: itemToBeRemoved.amount - 1,
+        };
+        updatedItemList = [...state.items];
+        updatedItemList[indexOfItemToBeRemoved] = updatedItem;
+      }
+      return {
+        items: updatedItemList,
+        totalAmount: newTotalAmount,
+      };
+
     default:
       return deafultCartState;
   }
